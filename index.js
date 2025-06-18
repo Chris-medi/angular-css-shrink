@@ -27,6 +27,26 @@ class AngularCssShrink {
     this.options.debug = options && options.debug ? options.debug : false;
     this.options.regExp = options && options.regExp ? options.regExp : new RegExp(/[^a-zA-Z0-9_\-]/g);
     this.options.minClassLength = options && options.minClassLength ? options.minClassLength : 1;
+    this.options.safelist = options?.safelist ?? [];
+  }
+
+  /**
+   * Verifica si un nombre de clase coincide con algún patrón en la lista segura (safelist)
+   * @date 2025-06-24
+   * @param {string} nameClass - El nombre de la clase CSS a verificar
+   * @param {Array<string|RegExp>} patterns - Array de patrones. Cada patrón puede ser una cadena
+   * para coincidencia exacta o una expresión regular para coincidencia por patrón
+   *
+   * @returns {boolean} - Retorna true si el nombre de clase coincide con algún patrón,
+   * @example
+   * Coincidencia exacta con string
+   * matchesWithSafeList('my-class', ['my-class', 'other-class']) // returns true
+   *
+   * Coincidencia con RegExp
+   * matchesWithSafeList('prefix-class', [/^prefix-/]) // returns true
+   */
+  matchesWithSafeList(nameClass, patterns) {
+    return patterns.some(p => typeof p === 'string' ? nameClass == p : p?.test?.(nameClass))
   }
 
   /**
@@ -61,7 +81,7 @@ class AngularCssShrink {
     });
     let found = false;
     selectorsClean.forEach((sc) => {
-      if (angularClasses.has(sc) || angularClasses.has(sc)) {
+      if (angularClasses.has(sc) || angularClasses.has(sc) || this.matchesWithSafeList(sc,this.options.safelist))  {
         found = true;
       }
     });
@@ -77,7 +97,7 @@ class AngularCssShrink {
   extractAngularClass(jsCodes) {
     let jscode = jsCodes.join(' ');
     // for new modal sizing
-    
+
     let classList = new Map();
     const code = esprima.tokenize(jscode);
 
@@ -103,6 +123,7 @@ class AngularCssShrink {
           }
         }
       }
+
     });
     return classList;
   }
